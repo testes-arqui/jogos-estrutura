@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estruturas de Dados: Crystal Clear</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap');
+
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: #1e1e24; /* Cinza escuro, não preto */
+            font-family: 'Inter', sans-serif; 
+            color: #ffffff;
+            user-select: none;
+        }
+
+        #game-container { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; 
+            /* Gradiente sutil para não ficar chapado */
+            background: radial-gradient(circle at center, #2d2d3a 0%, #1a1a20 100%);
+        }
+
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; 
+            pointer-events: none;
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* --- Estilo dos Painéis (Clean & Tech) --- */
+        .panel {
+            background: rgba(30, 30, 35, 0.95);
+            border: 1px solid #444;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            pointer-events: auto;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        /* Painel de Controles (Esquerda Inferior) */
+        .hud-panel {
+            width: 320px;
+            padding: 20px;
+            border-left: 4px solid #ffd700; /* Cor da Pilha por padrão */
+        }
+
+        h2 { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0 0 5px 0; 
+            color: #fff; 
+            font-weight: 800;
+            font-size: 1.4rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .subtitle { font-size: 12px; color: #aaa; margin-bottom: 15px; font-family: 'JetBrains Mono', monospace; }
+
+        /* Inputs e Botões */
+        .controls-row { display: flex; gap: 8px; margin-bottom: 10px; }
+
+        input[type="text"] {
+            background: #111; border: 1px solid #555; color: #fff;
+            padding: 10px; font-family: 'JetBrains Mono'; width: 80px; text-align: center;
+            outline: none; border-radius: 4px; font-weight: bold; font-size: 14px;
+        }
+        input:focus { border-color: #ffd700; }
+
+        button {
+            flex: 1;
+            background: #333; border: 1px solid #555; color: #eee;
+            padding: 10px; font-family: 'Inter'; font-weight: 600; cursor: pointer;
+            border-radius: 4px; text-transform: uppercase; font-size: 12px;
+            transition: all 0.2s;
+        }
+        button:hover { background: #444; color: #fff; border-color: #fff; }
+        button:active { transform: translateY(2px); }
+        button:disabled { opacity: 0.5; cursor: wait; }
+
+        button.primary { background: #005fcc; border-color: #007acc; color: white; }
+        button.primary:hover { background: #007acc; }
+        
+        button.danger { background: #8a1c1c; border-color: #c0392b; color: white; }
+        button.danger:hover { background: #c0392b; }
+
+        /* Slider de Velocidade */
+        .speed-control {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #444;
+        }
+        .speed-label {
+            display: flex; justify-content: space-between; font-size: 11px; color: #aaa; margin-bottom: 5px; font-weight: bold;
+        }
+        input[type=range] { width: 100%; cursor: pointer; accent-color: #ffd700; }
+
+        /* Painel de Código (Direita Inferior) */
+        .code-panel {
+            width: 400px;
+            align-self: flex-end;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            overflow: hidden;
+            border-left: 4px solid #007acc; /* Cor padrão código */
+        }
+
+        .code-header {
+            background: #25252b; padding: 10px 15px;
+            border-bottom: 1px solid #333; color: #888;
+            font-weight: bold; font-size: 11px; text-transform: uppercase;
+            display: flex; justify-content: space-between;
+        }
+
+        .code-content { padding: 15px; background: #1e1e24; min-height: 120px; }
+        
+        .code-line {
+            padding: 5px 8px; border-radius: 4px; margin-bottom: 2px;
+            opacity: 0.4; transition: all 0.3s; border-left: 2px solid transparent;
+        }
+        .code-line.active {
+            opacity: 1; background: rgba(255, 255, 255, 0.1);
+            color: #fff; border-left-color: #ffd700; font-weight: bold;
+        }
+
+        /* Syntax Highlight Colors */
+        .kw { color: #c678dd; } /* keyword (roxo) */
+        .fn { color: #61afef; } /* function (azul) */
+        .vr { color: #e06c75; } /* variable (vermelho) */
+        .cm { color: #98c379; font-style: italic; } /* comment (verde) */
+
+        /* Seletor de Cena (Topo) */
+        .scene-selector {
+            align-self: center;
+            background: rgba(20, 20, 25, 0.9);
+            padding: 5px; border-radius: 50px; border: 1px solid #444;
+            display: flex; gap: 5px; pointer-events: auto;
+        }
+        .scene-btn {
+            background: transparent; border: none; color: #888;
+            padding: 10px 25px; border-radius: 40px; font-weight: bold;
+            font-size: 14px;
+        }
+        .scene-btn.active { background: #333; color: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .scene-btn.active.stack { color: #ffd700; border: 1px solid #ffd700; }
+        .scene-btn.active.queue { color: #00e5ff; border: 1px solid #00e5ff; }
+
+        /* Notificação */
+        #notification-area {
+            position: absolute; top: 15%; width: 100%; text-align: center; pointer-events: none;
+        }
+        .bubble {
+            display: inline-block; background: #111; border: 1px solid #fff;
+            color: #fff; padding: 15px 30px; border-radius: 8px;
+            font-size: 16px; font-weight: bold; box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* Loading */
+        #loading {
+            position: fixed; top:0; left:0; width:100%; height:100%; background: #1e1e24; z-index: 100;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; 
+        }
+        .loader-bar { width: 200px; height: 4px; background: #333; margin-top: 20px; border-radius: 2px; overflow: hidden; }
+        .loader-fill { width: 0%; height: 100%; background: #ffd700; transition: width 0.3s; animation: load 2s infinite; }
+        @keyframes load { 0% { width: 0%; } 100% { width: 100%; } }
+    </style>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+            "@tweenjs/tween.js": "https://unpkg.com/@tweenjs/tween.js@23.1.1/dist/tween.esm.js"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div id="loading">
+        <h2 style="color: #ffd700">CARREGANDO SISTEMA</h2>
+        <div class="loader-bar"><div class="loader-fill"></div></div>
+    </div>
+
+    <div id="game-container"></div>
+
+    <div id="ui-layer">
+        <!-- Seletor -->
+        <div class="scene-selector">
+            <button id="btn-stack" class="scene-btn active stack" onclick="window.app.setMode('STACK')">🏗️ PILHA (LIFO)</button>
+            <button id="btn-queue" class="scene-btn" onclick="window.app.setMode('QUEUE')">🚇 FILA (FIFO)</button>
+        </div>
+
+        <div id="notification-area"></div>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%;">
+            <!-- Controles -->
+            <div class="panel hud-panel" id="hud-panel">
+                <h2 id="hud-title">PILHA</h2>
+                <div class="subtitle" id="hud-desc">O último a entrar é o primeiro a sair.</div>
+
+                <!-- Stack Controls -->
+                <div id="stack-controls">
+                    <div class="controls-row">
+                        <input type="text" id="stack-input" placeholder="10" maxlength="4">
+                        <button class="primary" onclick="window.app.run('PUSH')">PUSH (Inserir)</button>
+                    </div>
+                    <div class="controls-row">
+                        <button class="danger" onclick="window.app.run('POP')">POP (Remover)</button>
+                    </div>
+                </div>
+
+                <!-- Queue Controls -->
+                <div id="queue-controls" style="display: none;">
+                    <div class="controls-row">
+                        <input type="text" id="queue-input" placeholder="20" maxlength="4">
+                        <button class="primary" onclick="window.app.run('ENQUEUE')">ENQUEUE (Entrar)</button>
+                    </div>
+                    <div class="controls-row">
+                        <button class="danger" onclick="window.app.run('DEQUEUE')">DEQUEUE (Sair)</button>
+                    </div>
+                </div>
+
+                <!-- Slider Velocidade -->
+                <div class="speed-control">
+                    <div class="speed-label">
+                        <span>Lento (Análise)</span>
+                        <span>Rápido</span>
+                    </div>
+                    <input type="range" min="0.2" max="2" step="0.1" value="1" oninput="window.app.setSpeed(this.value)">
+                </div>
+            </div>
+
+            <!-- Código -->
+            <div class="panel code-panel">
+                <div class="code-header">
+                    <span>LÓGICA INTERNA</span>
+                    <span id="op-status" style="color: #ffd700">AGUARDANDO</span>
+                </div>
+                <div class="code-content" id="code-display">
+                    <div class="code-line" style="text-align: center; margin-top: 30px;">Selecione uma operação</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+        import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+        import { Tween, Easing, update as TweenUpdate } from '@tweenjs/tween.js';
+
+        // --- CONFIGURAÇÃO GLOBAL ---
+        const CONFIG = {
+            speed: 1.0, // Multiplicador de velocidade (1 = normal)
+            colors: {
+                stack: 0xffd700, // Dourado
+                stackHighlight: 0xffaa00,
+                queue: 0x00e5ff, // Ciano Neon
+                queueHighlight: 0x0099cc,
+                platform: 0x444444,
+                text: 0xffffff
+            }
+        };
+
+        const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms / CONFIG.speed));
+
+        const CODES = {
+            PUSH: [
+                `<span class="kw">let</span> <span class="vr">novo</span> = <span class="kw">new</span> <span class="fn">Node</span>(valor); <span class="cm">// Cria na memória</span>`,
+                `<span class="vr">novo</span>.prox = <span class="vr">TOPO</span>; <span class="cm">// Aponta pro antigo topo</span>`,
+                `<span class="vr">TOPO</span> = <span class="vr">novo</span>; <span class="cm">// Atualiza o topo</span>`
+            ],
+            POP: [
+                `<span class="kw">let</span> <span class="vr">temp</span> = <span class="vr">TOPO</span>; <span class="cm">// Segura quem vai sair</span>`,
+                `<span class="vr">TOPO</span> = <span class="vr">TOPO</span>.prox; <span class="cm">// Topo desce um nível</span>`,
+                `<span class="fn">free</span>(<span class="vr">temp</span>); <span class="cm">// Libera memória</span>`
+            ],
+            ENQUEUE: [
+                `<span class="kw">let</span> <span class="vr">novo</span> = <span class="kw">new</span> <span class="fn">Node</span>(valor); <span class="cm">// Cria na memória</span>`,
+                `<span class="kw">if</span>(<span class="vr">FIM</span>) <span class="vr">FIM</span>.prox = <span class="vr">novo</span>; <span class="cm">// Linka o último ao novo</span>`,
+                `<span class="vr">FIM</span> = <span class="vr">novo</span>; <span class="cm">// Atualiza ponteiro Fim</span>`
+            ],
+            DEQUEUE: [
+                `<span class="kw">let</span> <span class="vr">temp</span> = <span class="vr">INICIO</span>; <span class="cm">// Pega o primeiro</span>`,
+                `<span class="vr">INICIO</span> = <span class="vr">INICIO</span>.prox; <span class="cm">// Avança a fila</span>`,
+                `<span class="fn">free</span>(<span class="vr">temp</span>); <span class="cm">// Atende e remove</span>`
+            ]
+        };
+
+        class Engine {
+            constructor() {
+                this.scene = new THREE.Scene();
+                // Cor de fundo agradável (Não preto puro)
+                this.scene.background = new THREE.Color(0x1e1e24); 
+                // Fog suave para profundidade
+                this.scene.fog = new THREE.Fog(0x1e1e24, 20, 100);
+
+                this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.renderer = new THREE.WebGLRenderer({ antialias: true });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Sombras suaves
+                document.getElementById('game-container').appendChild(this.renderer.domElement);
+
+                
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+                this.scene.add(ambientLight);
+
+                const hemiLight = new THREE.HemisphereLight(0xddeeff, 0x222222, 0.5);
+                this.scene.add(hemiLight);
+
+                // 3. Luz Principal (Sol/Spot)
+                const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+                dirLight.position.set(20, 50, 20);
+                dirLight.castShadow = true;
+                dirLight.shadow.mapSize.width = 2048;
+                dirLight.shadow.mapSize.height = 2048;
+                this.scene.add(dirLight);
+
+                // Controles
+                this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+                this.controls.enableDamping = true;
+                this.controls.minDistance = 20;
+                this.controls.maxDistance = 100;
+
+                // Evento Resize
+                window.addEventListener('resize', () => {
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+
+                // Chão (Grid Infinito bonito)
+                const grid = new THREE.GridHelper(200, 100, 0x555555, 0x333333);
+                grid.position.y = -0.5;
+                this.scene.add(grid);
+
+                // Chão sólido para sombras
+                const plane = new THREE.Mesh(
+                    new THREE.PlaneGeometry(200, 200),
+                    new THREE.MeshStandardMaterial({ color: 0x222225, roughness: 0.8 })
+                );
+                plane.rotation.x = -Math.PI / 2;
+                plane.position.y = -0.6;
+                plane.receiveShadow = true;
+                this.scene.add(plane);
+
+                this.animate();
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                TweenUpdate();
+                this.controls.update();
+                this.renderer.render(this.scene, this.camera);
+            }
+        }
+
+        // --- OBJETO: BLOCO DE DADOS ---
+        class DataBlock {
+            constructor(value, type, font) {
+                this.value = value;
+                this.group = new THREE.Group();
+
+                // Cores
+                const mainColor = type === 'STACK' ? CONFIG.colors.stack : CONFIG.colors.queue;
+
+                // Geometria (Cubo arredondado simples)
+                const geometry = new THREE.BoxGeometry(4, 3, 4);
+                
+                // Material (Brilhante mas visível)
+                const material = new THREE.MeshStandardMaterial({ 
+                    color: mainColor,
+                    roughness: 0.3,
+                    metalness: 0.1
+                });
+
+                this.mesh = new THREE.Mesh(geometry, material);
+                this.mesh.castShadow = true;
+                this.mesh.receiveShadow = true;
+                this.group.add(this.mesh);
+
+                // --- VISIBILIDADE EXTRA: BORDA PRETA (WIREFRAME) ---
+                // Isso garante que você veja o cubo mesmo se a luz falhar
+                const edges = new THREE.EdgesGeometry(geometry);
+                const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }));
+                this.group.add(line);
+
+                // Texto
+                if (font) {
+                    const textGeo = new TextGeometry(String(value), {
+                        font: font,
+                        size: 1.2,
+                        height: 0.1
+                    });
+                    textGeo.computeBoundingBox();
+                    const centerOffset = -0.5 * (textGeo.boundingBox.max.x - textGeo.boundingBox.min.x);
+                    
+                    const textMat = new THREE.MeshBasicMaterial({ color: 0x000000 }); // Texto preto no bloco colorido = Alto Contraste
+                    const textMesh = new THREE.Mesh(textGeo, textMat);
+                    textMesh.position.set(centerOffset, 1.6, 0); // No topo
+                    textMesh.rotation.x = -Math.PI / 2; // Deitado
+                    this.group.add(textMesh);
+
+                    // Texto frontal também
+                    const textMeshFront = textMesh.clone();
+                    textMeshFront.rotation.x = 0;
+                    textMeshFront.position.set(centerOffset, -0.5, 2.1);
+                    this.group.add(textMeshFront);
+                }
+            }
+
+            // Animação de destaque (Piscar)
+            flash() {
+                const originalColor = this.mesh.material.color.getHex();
+                // Pisca Branco
+                this.mesh.material.color.setHex(0xffffff);
+                setTimeout(() => {
+                    this.mesh.material.color.setHex(originalColor);
+                }, 300 / CONFIG.speed);
+            }
+
+            // Animação de foco prolongado
+            highlight(isOn) {
+                if(isOn) {
+                    this.mesh.material.emissive.setHex(0x555555); // Brilha um pouco
+                } else {
+                    this.mesh.material.emissive.setHex(0x000000);
+                }
+            }
+        }
+
+        // --- APLICAÇÃO PRINCIPAL ---
+        class App {
+            constructor() {
+                this.engine = new Engine();
+                this.stack = [];
+                this.queue = [];
+                this.mode = 'STACK';
+                this.isBusy = false;
+
+                // Load Font
+                const loader = new FontLoader();
+                loader.load('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json', (font) => {
+                    this.font = font;
+                    this.initWorld();
+                });
+            }
+
+            initWorld() {
+                document.getElementById('loading').style.display = 'none';
+
+                // Base da Pilha
+                const stackBase = new THREE.Mesh(
+                    new THREE.BoxGeometry(10, 1, 10),
+                    new THREE.MeshStandardMaterial({ color: CONFIG.colors.platform })
+                );
+                stackBase.position.set(-15, 0, 0);
+                stackBase.receiveShadow = true;
+                this.engine.scene.add(stackBase);
+                // Texto no chão
+                this.addLabel("BASE DA PILHA", -15, 0, 8);
+
+                // Base da Fila
+                const queueBase = new THREE.Mesh(
+                    new THREE.BoxGeometry(60, 1, 8),
+                    new THREE.MeshStandardMaterial({ color: CONFIG.colors.platform })
+                );
+                queueBase.position.set(25, 0, 0);
+                queueBase.receiveShadow = true;
+                this.engine.scene.add(queueBase);
+                this.addLabel("INÍCIO", 5, 0, 6);
+                this.addLabel("FIM", 45, 0, 6);
+
+                this.setMode('STACK');
+            }
+
+            addLabel(text, x, y, z) {
+                if(!this.font) return;
+                const geo = new TextGeometry(text, { font: this.font, size: 0.8, height: 0.1 });
+                geo.computeBoundingBox();
+                const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x888888 }));
+                mesh.position.set(x - (geo.boundingBox.max.x - geo.boundingBox.min.x)/2, y + 0.6, z);
+                mesh.rotation.x = -Math.PI / 2;
+                this.engine.scene.add(mesh);
+            }
+
+            setSpeed(val) {
+                CONFIG.speed = parseFloat(val);
+            }
+
+            setMode(mode) {
+                if(this.isBusy) return;
+                this.mode = mode;
+
+                // UI Updates
+                document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+                const btn = mode === 'STACK' ? document.getElementById('btn-stack') : document.getElementById('btn-queue');
+                btn.classList.add('active');
+
+                // Colorize HUD panel borders
+                const hud = document.getElementById('hud-panel');
+                hud.style.borderLeftColor = mode === 'STACK' ? '#ffd700' : '#00e5ff';
+
+                // Controls Visibility
+                document.getElementById('stack-controls').style.display = mode === 'STACK' ? 'block' : 'none';
+                document.getElementById('queue-controls').style.display = mode === 'QUEUE' ? 'block' : 'none';
+
+                // Camera Position
+                const targetPos = mode === 'STACK' ? { x: -15, y: 25, z: 40 } : { x: 25, y: 25, z: 40 };
+                const lookAt = mode === 'STACK' ? { x: -15, y: 5, z: 0 } : { x: 25, y: 0, z: 0 };
+
+                new Tween(this.engine.camera.position).to(targetPos, 1000).easing(Easing.Cubic.InOut).start();
+                new Tween(this.engine.controls.target).to(lookAt, 1000).easing(Easing.Cubic.InOut).start();
+
+                // Clear Code
+                document.getElementById('code-display').innerHTML = '<div class="code-line" style="text-align: center; margin-top: 30px;">Pronto para operação</div>';
+            }
+
+            notify(msg) {
+                const area = document.getElementById('notification-area');
+                area.innerHTML = '';
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                bubble.innerText = msg;
+                area.appendChild(bubble);
+                setTimeout(() => bubble.remove(), 2000 * (1/CONFIG.speed));
+            }
+
+            updateCode(op, lineIndex) {
+                const display = document.getElementById('code-display');
+                if(lineIndex === -1) {
+                    display.innerHTML = CODES[op].map((line, i) => 
+                        `<div id="line-${i}" class="code-line">${line}</div>`
+                    ).join('');
+                } else {
+                    document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+                    const active = document.getElementById(`line-${lineIndex}`);
+                    if(active) active.classList.add('active');
+                }
+            }
+
+            async run(op) {
+                if(this.isBusy) return;
+                this.isBusy = true;
+                document.querySelectorAll('button').forEach(b => b.disabled = true);
+                
+                document.getElementById('op-status').innerText = "EXECUTANDO " + op;
+
+                try {
+                    this.updateCode(op, -1); // Renderiza o código
+                    if(op === 'PUSH') await this.logicPush();
+                    if(op === 'POP') await this.logicPop();
+                    if(op === 'ENQUEUE') await this.logicEnqueue();
+                    if(op === 'DEQUEUE') await this.logicDequeue();
+                } catch(e) {
+                    this.notify("⚠️ " + e.message);
+                }
+
+                document.getElementById('op-status').innerText = "AGUARDANDO";
+                this.isBusy = false;
+                document.querySelectorAll('button').forEach(b => b.disabled = false);
+            }
+
+            // --- LÓGICA PILHA ---
+            async logicPush() {
+                const inp = document.getElementById('stack-input');
+                const val = inp.value || Math.floor(Math.random()*99);
+                inp.value = '';
+
+                // Linha 1: Criar Nó
+                this.updateCode('PUSH', 0);
+                this.notify(`Criando nó ${val} na memória...`);
+                const node = new DataBlock(val, 'STACK', this.font);
+                node.group.position.set(-15, 20, 0); // Spawna no ar
+                this.engine.scene.add(node.group);
+                
+                new Tween(node.group.position).to({ y: 15 }, 500 / CONFIG.speed).start();
+                await wait(1000);
+
+                // Linha 2: Prox = Topo
+                this.updateCode('PUSH', 1);
+                if(this.stack.length > 0) {
+                    this.notify("Novo aponta para o antigo TOPO");
+                    const oldTop = this.stack[this.stack.length-1];
+                    oldTop.highlight(true);
+                    await wait(800);
+                    oldTop.highlight(false);
+                } else {
+                    this.notify("Pilha vazia. Prox aponta para NULL");
+                }
+                
+                // Animação de queda
+                const targetY = 2 + (this.stack.length * 3.2); // Altura do bloco + espacinho
+                new Tween(node.group.position).to({ y: targetY }, 800 / CONFIG.speed).easing(Easing.Bounce.Out).start();
+                await wait(1000);
+
+                // Linha 3: Atualiza Topo
+                this.updateCode('PUSH', 2);
+                this.notify("TOPO atualizado para o novo nó");
+                node.flash();
+                this.stack.push(node);
+                await wait(800);
+            }
+
+            async logicPop() {
+                if(this.stack.length === 0) throw new Error("Pilha Vazia (Underflow)");
+
+                // Linha 1: Temp = Topo
+                this.updateCode('POP', 0);
+                const node = this.stack[this.stack.length-1];
+                this.notify("Selecionando o TOPO para remoção");
+                node.highlight(true);
+                await wait(1000);
+
+                // Linha 2: Topo = Prox
+                this.updateCode('POP', 1);
+                this.notify("TOPO volta para o item anterior");
+                this.stack.pop();
+                
+                // Move para o lado (Sai da pilha)
+                new Tween(node.group.position).to({ x: -25, rotation: {z: 0.5} }, 800 / CONFIG.speed).start();
+                if(this.stack.length > 0) this.stack[this.stack.length-1].flash();
+                await wait(1000);
+
+                // Linha 3: Free
+                this.updateCode('POP', 2);
+                this.notify("Liberando memória...");
+                new Tween(node.group.scale).to({ x:0.1, y:0.1, z:0.1 }, 500 / CONFIG.speed).start();
+                await wait(500);
+                this.engine.scene.remove(node.group);
+            }
+
+            // --- LÓGICA FILA ---
+            async logicEnqueue() {
+                const inp = document.getElementById('queue-input');
+                const val = inp.value || Math.floor(Math.random()*99);
+                inp.value = '';
+
+                const startX = 5;
+                const gap = 5; // Largura do bloco + espaço
+                const targetX = startX + (this.queue.length * gap);
+
+                // Linha 1: Criar
+                this.updateCode('ENQUEUE', 0);
+                this.notify(`Criando nó ${val}...`);
+                const node = new DataBlock(val, 'QUEUE', this.font);
+                node.group.position.set(50, 2, 0); // Nasce no final da estrada
+                this.engine.scene.add(node.group);
+                await wait(800);
+
+                // Linha 2: Linkar
+                this.updateCode('ENQUEUE', 1);
+                if(this.queue.length > 0) {
+                    this.notify("FIM aponta para o novo nó");
+                    this.queue[this.queue.length-1].flash();
+                } else {
+                    this.notify("Fila vazia. INICIO = NOVO");
+                }
+                
+                // Move para posição
+                new Tween(node.group.position).to({ x: targetX }, 1000 / CONFIG.speed).easing(Easing.Quadratic.Out).start();
+                await wait(1200);
+
+                // Linha 3: Atualizar Fim
+                this.updateCode('ENQUEUE', 2);
+                this.notify("Ponteiro FIM atualizado");
+                this.queue.push(node);
+                node.flash();
+                await wait(800);
+            }
+
+            async logicDequeue() {
+                if(this.queue.length === 0) throw new Error("Fila Vazia");
+
+                // Linha 1: Temp = Inicio
+                this.updateCode('DEQUEUE', 0);
+                const node = this.queue[0];
+                this.notify("Atendendo o INÍCIO da fila");
+                node.highlight(true);
+                await wait(1000);
+
+                // Linha 2: Inicio = Prox
+                this.updateCode('DEQUEUE', 1);
+                this.queue.shift(); // Remove lógico
+                
+                // Sai andando
+                new Tween(node.group.position).to({ z: 10, opacity: 0 }, 1000 / CONFIG.speed).start();
+                
+                // Todo mundo anda pra frente (Visual apenas)
+                this.queue.forEach((n, i) => {
+                    const newX = 5 + (i * 5);
+                    new Tween(n.group.position).to({ x: newX }, 800 / CONFIG.speed).delay(100).start();
+                });
+                await wait(1500);
+
+                // Linha 3: Free
+                this.updateCode('DEQUEUE', 2);
+                this.notify("Liberando memória");
+                this.engine.scene.remove(node.group);
+            }
+        }
+
+        window.onload = () => window.app = new App();
+    </script>
+</body>
+</html>
