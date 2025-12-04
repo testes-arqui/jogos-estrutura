@@ -10,7 +10,7 @@
         body { 
             margin: 0; 
             overflow: hidden; 
-            background-color: #1e1e24; /* Cinza escuro, não preto */
+            background-color: #1e1e24; 
             font-family: 'Inter', sans-serif; 
             color: #ffffff;
             user-select: none;
@@ -18,7 +18,6 @@
 
         #game-container { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; 
-            /* Gradiente sutil para não ficar chapado */
             background: radial-gradient(circle at center, #2d2d3a 0%, #1a1a20 100%);
         }
 
@@ -30,7 +29,6 @@
             box-sizing: border-box;
         }
 
-        /* --- Estilo dos Painéis (Clean & Tech) --- */
         .panel {
             background: rgba(30, 30, 35, 0.95);
             border: 1px solid #444;
@@ -41,11 +39,10 @@
             transition: all 0.3s ease;
         }
 
-        /* Painel de Controles (Esquerda Inferior) */
         .hud-panel {
             width: 320px;
             padding: 20px;
-            border-left: 4px solid #ffd700; /* Cor da Pilha por padrão */
+            border-left: 4px solid #ffd700; 
         }
 
         h2 { 
@@ -60,7 +57,6 @@
 
         .subtitle { font-size: 12px; color: #aaa; margin-bottom: 15px; font-family: 'JetBrains Mono', monospace; }
 
-        /* Inputs e Botões */
         .controls-row { display: flex; gap: 8px; margin-bottom: 10px; }
 
         input[type="text"] {
@@ -87,7 +83,6 @@
         button.danger { background: #8a1c1c; border-color: #c0392b; color: white; }
         button.danger:hover { background: #c0392b; }
 
-        /* Slider de Velocidade */
         .speed-control {
             margin-top: 15px;
             padding-top: 10px;
@@ -98,14 +93,13 @@
         }
         input[type=range] { width: 100%; cursor: pointer; accent-color: #ffd700; }
 
-        /* Painel de Código (Direita Inferior) */
         .code-panel {
             width: 400px;
             align-self: flex-end;
             font-family: 'JetBrains Mono', monospace;
             font-size: 13px;
             overflow: hidden;
-            border-left: 4px solid #007acc; /* Cor padrão código */
+            border-left: 4px solid #007acc; 
         }
 
         .code-header {
@@ -126,13 +120,11 @@
             color: #fff; border-left-color: #ffd700; font-weight: bold;
         }
 
-        /* Syntax Highlight Colors */
-        .kw { color: #c678dd; } /* keyword (roxo) */
-        .fn { color: #61afef; } /* function (azul) */
-        .vr { color: #e06c75; } /* variable (vermelho) */
-        .cm { color: #98c379; font-style: italic; } /* comment (verde) */
+        .kw { color: #c678dd; } 
+        .fn { color: #61afef; } 
+        .vr { color: #e06c75; } 
+        .cm { color: #98c379; font-style: italic; } 
 
-        /* Seletor de Cena (Topo) */
         .scene-selector {
             align-self: center;
             background: rgba(20, 20, 25, 0.9);
@@ -148,7 +140,6 @@
         .scene-btn.active.stack { color: #ffd700; border: 1px solid #ffd700; }
         .scene-btn.active.queue { color: #00e5ff; border: 1px solid #00e5ff; }
 
-        /* Notificação */
         #notification-area {
             position: absolute; top: 15%; width: 100%; text-align: center; pointer-events: none;
         }
@@ -160,7 +151,6 @@
         }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        /* Loading */
         #loading {
             position: fixed; top:0; left:0; width:100%; height:100%; background: #1e1e24; z-index: 100;
             display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; 
@@ -189,7 +179,6 @@
     <div id="game-container"></div>
 
     <div id="ui-layer">
-        <!-- Seletor -->
         <div class="scene-selector">
             <button id="btn-stack" class="scene-btn active stack" onclick="window.app.setMode('STACK')">🏗️ PILHA (LIFO)</button>
             <button id="btn-queue" class="scene-btn" onclick="window.app.setMode('QUEUE')">🚇 FILA (FIFO)</button>
@@ -198,12 +187,10 @@
         <div id="notification-area"></div>
 
         <div style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%;">
-            <!-- Controles -->
             <div class="panel hud-panel" id="hud-panel">
                 <h2 id="hud-title">PILHA</h2>
                 <div class="subtitle" id="hud-desc">O último a entrar é o primeiro a sair.</div>
 
-                <!-- Stack Controls -->
                 <div id="stack-controls">
                     <div class="controls-row">
                         <input type="text" id="stack-input" placeholder="10" maxlength="4">
@@ -214,7 +201,6 @@
                     </div>
                 </div>
 
-                <!-- Queue Controls -->
                 <div id="queue-controls" style="display: none;">
                     <div class="controls-row">
                         <input type="text" id="queue-input" placeholder="20" maxlength="4">
@@ -225,7 +211,6 @@
                     </div>
                 </div>
 
-                <!-- Slider Velocidade -->
                 <div class="speed-control">
                     <div class="speed-label">
                         <span>Lento (Análise)</span>
@@ -255,13 +240,12 @@
         import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
         import { Tween, Easing, update as TweenUpdate } from '@tweenjs/tween.js';
 
-        // --- CONFIGURAÇÃO GLOBAL ---
         const CONFIG = {
-            speed: 1.0, // Multiplicador de velocidade (1 = normal)
+            speed: 0.8, // Multiplicador de velocidade (1 = normal)
             colors: {
-                stack: 0xffd700, // Dourado
+                stack: 0xffd700, 
                 stackHighlight: 0xffaa00,
-                queue: 0x00e5ff, // Ciano Neon
+                queue: 0x00e5ff, 
                 queueHighlight: 0x0099cc,
                 platform: 0x444444,
                 text: 0xffffff
@@ -296,16 +280,14 @@
         class Engine {
             constructor() {
                 this.scene = new THREE.Scene();
-                // Cor de fundo agradável (Não preto puro)
                 this.scene.background = new THREE.Color(0x1e1e24); 
-                // Fog suave para profundidade
                 this.scene.fog = new THREE.Fog(0x1e1e24, 20, 100);
 
                 this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
                 this.renderer = new THREE.WebGLRenderer({ antialias: true });
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
                 this.renderer.shadowMap.enabled = true;
-                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Sombras suaves
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
                 document.getElementById('game-container').appendChild(this.renderer.domElement);
 
                 
@@ -315,7 +297,6 @@
                 const hemiLight = new THREE.HemisphereLight(0xddeeff, 0x222222, 0.5);
                 this.scene.add(hemiLight);
 
-                // 3. Luz Principal (Sol/Spot)
                 const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
                 dirLight.position.set(20, 50, 20);
                 dirLight.castShadow = true;
@@ -323,25 +304,21 @@
                 dirLight.shadow.mapSize.height = 2048;
                 this.scene.add(dirLight);
 
-                // Controles
                 this.controls = new OrbitControls(this.camera, this.renderer.domElement);
                 this.controls.enableDamping = true;
                 this.controls.minDistance = 20;
                 this.controls.maxDistance = 100;
 
-                // Evento Resize
                 window.addEventListener('resize', () => {
                     this.camera.aspect = window.innerWidth / window.innerHeight;
                     this.camera.updateProjectionMatrix();
                     this.renderer.setSize(window.innerWidth, window.innerHeight);
                 });
 
-                // Chão (Grid Infinito bonito)
                 const grid = new THREE.GridHelper(200, 100, 0x555555, 0x333333);
                 grid.position.y = -0.5;
                 this.scene.add(grid);
 
-                // Chão sólido para sombras
                 const plane = new THREE.Mesh(
                     new THREE.PlaneGeometry(200, 200),
                     new THREE.MeshStandardMaterial({ color: 0x222225, roughness: 0.8 })
@@ -362,19 +339,15 @@
             }
         }
 
-        // --- OBJETO: BLOCO DE DADOS ---
         class DataBlock {
             constructor(value, type, font) {
                 this.value = value;
                 this.group = new THREE.Group();
 
-                // Cores
                 const mainColor = type === 'STACK' ? CONFIG.colors.stack : CONFIG.colors.queue;
 
-                // Geometria (Cubo arredondado simples)
                 const geometry = new THREE.BoxGeometry(4, 3, 4);
                 
-                // Material (Brilhante mas visível)
                 const material = new THREE.MeshStandardMaterial({ 
                     color: mainColor,
                     roughness: 0.3,
@@ -386,8 +359,7 @@
                 this.mesh.receiveShadow = true;
                 this.group.add(this.mesh);
 
-                // --- VISIBILIDADE EXTRA: BORDA PRETA (WIREFRAME) ---
-                // Isso garante que você veja o cubo mesmo se a luz falhar
+            
                 const edges = new THREE.EdgesGeometry(geometry);
                 const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }));
                 this.group.add(line);
@@ -408,7 +380,6 @@
                     textMesh.rotation.x = -Math.PI / 2; // Deitado
                     this.group.add(textMesh);
 
-                    // Texto frontal também
                     const textMeshFront = textMesh.clone();
                     textMeshFront.rotation.x = 0;
                     textMeshFront.position.set(centerOffset, -0.5, 2.1);
@@ -436,7 +407,7 @@
             }
         }
 
-        // --- APLICAÇÃO PRINCIPAL ---
+        //APLICAÇÃO PRINCIPAL
         class App {
             constructor() {
                 this.engine = new Engine();
@@ -637,7 +608,7 @@
                 this.engine.scene.remove(node.group);
             }
 
-            // --- LÓGICA FILA ---
+            // LÓGICA FILA -
             async logicEnqueue() {
                 const inp = document.getElementById('queue-input');
                 const val = inp.value || Math.floor(Math.random()*99);
